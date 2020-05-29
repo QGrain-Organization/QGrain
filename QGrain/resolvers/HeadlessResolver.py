@@ -61,7 +61,7 @@ class HeadlessResolver(Resolver):
         self.current_exception = FinalLocalOptimizationError(algorithm_result.message)
 
     def on_exception_raised_while_fitting(self, exception: Exception):
-        self.current_exception
+        self.current_exception = exception
 
     def execute_task(self, task: FittingTask):
         self.current_task = task
@@ -77,4 +77,3 @@ class HeadlessResolver(Resolver):
         else:
             return True, self.current_task, self.current_result
 
-        
