@@ -5,8 +5,6 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.stats import norm
 
-from QGrain import QGRAIN_ROOT_PATH
-
 
 def get_scale_ratio(max_ratio):
     assert max_ratio > 0.0
@@ -59,7 +57,6 @@ if __name__ == "__main__":
     sample_max_scale_ratios = ((0.2, 0.2, 0.4), (0.2, 0.2, 0.4), (0.4, 0.4, 0.8), (0.3, 0.3, 0.6))
 
     app = QApplication(sys.argv)
-    app.setWindowIcon(QIcon(os.path.join(QGRAIN_ROOT_PATH, "settings", "icons", "icon.png")))
     chart = QtCharts.QChart()
     chart.setBackgroundVisible(False)
     # chart.setAnimationOptions(QtCharts.QChart.SeriesAnimations)

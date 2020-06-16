@@ -125,8 +125,6 @@ class ViewDataManager(QObject):
             for i, header in enumerate(headers):
                 self.write(1, first_column_index+i, header)
 
-
-
     def add_records(self, records_to_add: List[FittingResult]):
         if records_to_add is None or len(records_to_add) == 0:
             return
@@ -239,9 +237,13 @@ class RecordedDataTable(QWidget):
         self.show_loss_action = self.menu.addAction(self.tr("Show Loss"))
         self.show_loss_action.triggered.connect(self.show_loss)
         self.table.customContextMenuRequested.connect(self.show_menu)
+        self.table.cellClicked.connect(self.on_data_item_clicked)
 
     def show_menu(self, pos):
         self.menu.popup(QCursor.pos())
+
+    def on_data_item_clicked(self, row, column):
+        self.show_distribution()
 
     def on_data_recorded(self, results: List[FittingResult]):
         self.manager.add_records(results)

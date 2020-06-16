@@ -2,6 +2,7 @@ __all__ = ["ControlPanel"]
 
 import logging
 import os
+from uuid import UUID
 
 import numpy as np
 from PySide2.QtCore import Qt, QTimer, Signal
@@ -17,7 +18,7 @@ from QGrain.models.SampleDataset import SampleDataset
 class ControlPanel(QWidget):
     sigDistributionTypeChanged = Signal(int)
     sigComponentNumberChanged = Signal(int)
-    sigFocusSampleChanged = Signal(int) # index of the sample
+    sigFocusSampleChanged = Signal(UUID) # uuid of the sample
     sigDataSettingsChanged = Signal(dict)
     sigObserveIterationChanged = Signal(bool)
     sigInheritParamsChanged = Signal(bool)
@@ -32,6 +33,7 @@ class ControlPanel(QWidget):
         self.__component_number = 2
         self.__data_index = 0
         self.sample_names = None
+        self.sample_uuids = None
         self.auto_fit_flag = True
         self.auto_run_timer = QTimer()
         self.auto_run_timer.setSingleShot(True)
@@ -169,7 +171,7 @@ class ControlPanel(QWidget):
         self.data_index_display.setText(self.sample_names[value])
         self.__data_index = value
         self.logger.debug("Data index has been set to [%d].", value)
-        self.sigFocusSampleChanged.emit(value)
+        self.sigFocusSampleChanged.emit(self.sample_uuids[value])
         if self.auto_fit_flag:
             self.sigGUIResolverFittingStarted.emit()
 
@@ -268,7 +270,13 @@ class ControlPanel(QWidget):
             self.sigDataSettingsChanged.emit({"auto_record": False})
 
     def on_data_loaded(self, dataset: SampleDataset):
-        self.sample_names = [sample.name for sample in dataset.samples]
+        sample_names = []
+        sample_uuids = []
+        for i, sample in enumerate(dataset.samples):
+            sample_names.append(str(sample.name))
+            sample_uuids.append(sample.uuid)
+        self.sample_names = sample_names
+        self.sample_uuids = sample_uuids
         self.logger.info("Data was loaded.")
         self.data_index = 0
         self.logger.info("Data index has been set to 0.")

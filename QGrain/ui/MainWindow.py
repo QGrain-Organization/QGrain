@@ -22,6 +22,7 @@ from QGrain.ui.DataManager import DataManager
 from QGrain.ui.DistributionCanvas import DistributionCanvas
 from QGrain.ui.LossCanvas import LossCanvas
 from QGrain.ui.PCAPanel import PCAPanel
+from QGrain.ui.RawDataTable import RawDataTable
 from QGrain.ui.RecordedDataTable import RecordedDataTable
 from QGrain.ui.SettingWindow import SettingWindow
 from QGrain.ui.TaskWindow import TaskWindow
@@ -134,10 +135,7 @@ class MainWindow(QMainWindow):
 
         # Raw Data Table
         self.raw_data_dock = QDockWidget(self.tr("Raw Data Table"))
-        self.raw_data_table = QTableWidget()
-        self.raw_data_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.raw_data_table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.raw_data_table.setAlternatingRowColors(True)
+        self.raw_data_table = RawDataTable()
         self.raw_data_dock.setWidget(self.raw_data_table)
         self.raw_data_dock.setObjectName("RawDataTableDock")
 
@@ -156,7 +154,6 @@ class MainWindow(QMainWindow):
         self.control_panel.sigComponentNumberChanged.connect(self.gui_resolver.on_component_number_changed)
         self.control_panel.sigComponentNumberChanged.connect(self.distribution_canvas.on_component_number_changed)
         self.control_panel.sigFocusSampleChanged.connect(self.data_manager.on_focus_sample_changed)
-        self.control_panel.sigFocusSampleChanged.connect(self.on_focus_sample_changed)
         self.control_panel.sigObserveIterationChanged.connect(self.distribution_canvas.on_observe_iteration_changed)
         self.control_panel.sigObserveIterationChanged.connect(self.loss_canvas.on_observe_iteration_changed)
         self.control_panel.sigInheritParamsChanged.connect(self.gui_resolver.on_inherit_params_changed)
@@ -170,7 +167,7 @@ class MainWindow(QMainWindow):
 
         self.distribution_canvas.sigExpectedMeanValueChanged.connect(self.gui_resolver.on_excepted_mean_value_changed)
 
-        self.data_manager.sigDataLoaded.connect(self.on_data_loaded)
+        self.data_manager.sigDataLoaded.connect(self.raw_data_table.on_data_loaded)
         self.data_manager.sigDataLoaded.connect(self.control_panel.on_data_loaded)
         self.data_manager.sigDataLoaded.connect(self.task_window.on_data_loaded)
         self.data_manager.sigDataLoaded.connect(self.pca_panel.on_data_loaded)
@@ -194,7 +191,6 @@ class MainWindow(QMainWindow):
         self.task_window.fitting_started_signal.connect(self.multiprocessing_resolver.execute_tasks)
         self.task_window.fitting_finished_signal.connect(self.data_manager.on_multiprocessing_task_finished)
 
-        self.raw_data_table.cellClicked.connect(self.on_data_item_clicked)
         self.recorded_data_table.sigRemoveRecords.connect(self.data_manager.remove_data)
         self.recorded_data_table.sigShowDistribution.connect(self.distribution_canvas.show_fitting_result)
         self.recorded_data_table.sigShowLoss.connect(self.loss_canvas.show_fitting_result)
@@ -275,31 +271,6 @@ class MainWindow(QMainWindow):
 
     def show_recorded_data_dock(self):
         self.recorded_data_dock.show()
-
-    def on_data_loaded(self, dataset: SampleDataset):
-        nrows = dataset.data_count
-        ncols = len(dataset.classes)
-        self.raw_data_table.setRowCount(nrows)
-        self.raw_data_table.setColumnCount(ncols)
-        self.raw_data_table.setHorizontalHeaderLabels(["{0:.2f}".format(class_value) for class_value in dataset.classes])
-        self.raw_data_table.setVerticalHeaderLabels([str(sample.name) for sample in dataset.samples])
-        for i, sample in enumerate(dataset.samples):
-            QCoreApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
-            for j, value in enumerate(sample.distribution):
-                item = QTableWidgetItem("{0:.4f}".format(value))
-                item.setTextAlignment(Qt.AlignCenter)
-                self.raw_data_table.setItem(i, j, item)
-
-        # resize to tight layout
-        self.raw_data_table.resizeColumnsToContents()
-        self.logger.info("Data was loaded, and has been update to the table.")
-
-    def on_data_item_clicked(self, row, column):
-        self.sigDataSelected.emit(row)
-        self.logger.debug("The item at [%d] row in raw data table was selected.", row)
-
-    def on_focus_sample_changed(self, index):
-        self.raw_data_table.setCurrentCell(index, 0)
 
     def on_gui_fitting_task_canceled(self):
         self.gui_resolver.cancel()

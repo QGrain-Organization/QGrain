@@ -207,11 +207,11 @@ class DataManager(QObject):
             self.logger.exception("Unknown exception raised.", stack_info=True)
             self.ask_retry(self.tr("Unknown exception raised. See the log for more details."), self.load_data)
 
-    def on_focus_sample_changed(self, index: int):
+    def on_focus_sample_changed(self, sample_id: UUID):
         if self.dataset is None:
             self.logger.info("Grain size data is still None, ignored.")
             return
-        self.sigTargetDataChanged.emit(self.dataset.samples[index])
+        self.sigTargetDataChanged.emit(self.dataset.get_sample_by_id(sample_id))
         self.logger.debug("Focus sample data changed, the data has been emitted.")
 
     def on_fitting_suceeded(self, result: FittingResult):

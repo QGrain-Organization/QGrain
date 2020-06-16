@@ -47,10 +47,15 @@ class DistributionSumError(Exception):
     pass
 
 
+class SampleNotFountError(Exception):
+    """Raises while the sample is not found in this dataset."""
+    pass
+
+
 class SampleDataset:
     def __init__(self):
         self.__classes = None
-        self.__samples = []
+        self.__samples = {}
 
     @property
     def data_count(self) -> int:
@@ -69,7 +74,7 @@ class SampleDataset:
 
     @property
     def samples(self) -> Iterable[SampleData]:
-        return [sample for sample in self.__samples]
+        return self.__samples.values()
 
     def is_incremental(self, nums: np.ndarray) -> bool:
         """Returns `True` while the array is incremental.
@@ -123,39 +128,32 @@ class SampleDataset:
 
         assert len(names) == len(distributions)
         # use temp to implement roll-back
-        temp = []
+        temp = {}
         for name, distribution in zip(names, distributions):
             assert len(distribution) == len(classes)
             self.validate_sample_name(name)
             self.validate_distribution(distribution)
             sample = SampleData(name, classes, distribution)
-            temp.append(sample)
+            temp.update({sample.uuid: sample})
         # if no exception raised, the codes below will be executed
-        self.__samples.extend(temp)
+        self.__samples.update(temp)
         self.__classes = classes
 
     def combine(self, another_dataset):
         equal_res = np.equal(another_dataset.classes, self.classes)
         if np.all(equal_res):
-            self.__samples.extend(another_dataset.samples)
+            self.__samples.update(another_dataset.__samples)
         else:
             raise ClassesNotMatchError(self.classes, another_dataset.classes)
 
     def get_sample_by_id(self, uuid: UUID):
-        for sample in self.samples:
-            if sample.uuid == uuid:
-                return sample
-        # TODO: raise custom exception
-        raise ValueError("There is no sample with this id.", uuid)
+        if uuid in self.__samples:
+            return self.__samples[uuid]
+        else:
+            raise SampleNotFountError("There is no sample with this id.", uuid)
 
     def remove_sample_by_id(self, uuid: UUID):
-        index_to_remove = None
-        for index, sample in enumerate(self.samples):
-            if sample.uuid == uuid:
-                index_to_remove = index
-                break
-        if index_to_remove is not None:
-            removed_sample = self.__samples.pop(index_to_remove)
-            return removed_sample
-        else:
-            raise ValueError("There is no sample with this id.", uuid)
+        try:
+            return self.__samples.pop(uuid)
+        except KeyError:
+            raise SampleNotFountError("There is no sample with this id.", uuid)
